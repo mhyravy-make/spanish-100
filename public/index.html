@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>100 Days of Spanish 🇪🇸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-orbs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <div class="brand"><span class="flag">🇪🇸</span> <span class="brand-name">100 Days of Spanish</span></div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard"><span>🏠</span> Dashboard</button>
+      <button class="tab" data-tab="dictionary"><span>📖</span> Dictionary</button>
+      <button class="tab" data-tab="progress"><span>📊</span> Progress</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="view active">
+      <div class="day-hero">
+        <div class="day-hero-inner">
+          <div class="day-eyebrow">The Challenge</div>
+          <div class="day-number">Day <span id="dayNum">–</span><span class="day-total">of 100</span></div>
+          <div class="challenge-track"><div class="challenge-fill" id="challengeFill"></div></div>
+          <div class="day-sub" id="daySub"></div>
+        </div>
+      </div>
+
+      <div class="cards">
+        <article class="person-card" data-person="Martin">
+          <div class="card-head">
+            <div class="avatar" data-person="Martin">M</div>
+            <div class="card-name">
+              <h2>Martin</h2>
+              <span class="card-tagline" id="Martin-badge"></span>
+            </div>
+          </div>
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle class="ring-track" cx="60" cy="60" r="52" />
+              <circle class="ring-fill" id="Martin-ring" cx="60" cy="60" r="52" />
+            </svg>
+            <div class="ring-center">
+              <span class="ring-mins" id="Martin-mins">0</span>
+              <span class="ring-goal">of 30 min</span>
+            </div>
+            <div class="ring-check" id="Martin-check">✓</div>
+          </div>
+          <div class="stats">
+            <div class="stat"><span class="stat-num" id="Martin-streak">0</span><span class="stat-lbl">🔥 day streak</span></div>
+            <div class="stat"><span class="stat-num" id="Martin-completed">0</span><span class="stat-lbl">✅ days done</span></div>
+          </div>
+        </article>
+
+        <div class="vs">VS</div>
+
+        <article class="person-card" data-person="Oliver">
+          <div class="card-head">
+            <div class="avatar" data-person="Oliver">O</div>
+            <div class="card-name">
+              <h2>Oliver</h2>
+              <span class="card-tagline" id="Oliver-badge"></span>
+            </div>
+          </div>
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle class="ring-track" cx="60" cy="60" r="52" />
+              <circle class="ring-fill" id="Oliver-ring" cx="60" cy="60" r="52" />
+            </svg>
+            <div class="ring-center">
+              <span class="ring-mins" id="Oliver-mins">0</span>
+              <span class="ring-goal">of 30 min</span>
+            </div>
+            <div class="ring-check" id="Oliver-check">✓</div>
+          </div>
+          <div class="stats">
+            <div class="stat"><span class="stat-num" id="Oliver-streak">0</span><span class="stat-lbl">🔥 day streak</span></div>
+            <div class="stat"><span class="stat-num" id="Oliver-completed">0</span><span class="stat-lbl">✅ days done</span></div>
+          </div>
+        </article>
+      </div>
+
+      <button class="start-btn" id="startSessionBtn">
+        <span class="start-icon">▶</span> Start a Study Session
+      </button>
+    </section>
+
+    <!-- DICTIONARY -->
+    <section id="dictionary" class="view">
+      <div class="view-head">
+        <h1>📖 Shared Dictionary</h1>
+        <p class="view-sub">Every word you two have collected on the journey.</p>
+      </div>
+      <div class="dict-controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="dictSearch" placeholder="Search a word…" />
+        </div>
+        <div class="seg" id="dictSeg">
+          <button class="seg-btn active" data-person="">Everyone</button>
+          <button class="seg-btn" data-person="Martin">Martin</button>
+          <button class="seg-btn" data-person="Oliver">Oliver</button>
+        </div>
+      </div>
+      <div class="dict-grid" id="dictGrid"></div>
+      <div class="empty" id="dictEmpty" hidden>
+        <div class="empty-emoji">✍️</div>
+        <p>No words yet. Finish a day of study to add your first three!</p>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section id="progress" class="view">
+      <div class="view-head">
+        <h1>📊 Progress</h1>
+        <p class="view-sub">100 days, one square each. Keep the grid green.</p>
+      </div>
+      <div id="progressPeople"></div>
+    </section>
+  </main>
+
+  <!-- Person picker modal -->
+  <div class="modal-overlay" id="personModal" hidden>
+    <div class="modal">
+      <button class="x-close" data-close>×</button>
+      <h2 class="modal-title">Who's studying? 👀</h2>
+      <p class="modal-sub">Pick a name to start the timer.</p>
+      <div class="person-picker">
+        <button data-pick="Martin"><span class="avatar" data-person="Martin">M</span> Martin</button>
+        <button data-pick="Oliver"><span class="avatar" data-person="Oliver">O</span> Oliver</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timer modal -->
+  <div class="modal-overlay" id="timerModal" hidden>
+    <div class="modal timer-modal">
+      <div class="timer-person"><span class="avatar" id="timerAvatar">M</span> <span id="timerPerson"></span></div>
+      <div class="timer-ring-wrap">
+        <svg class="ring big" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#8b5cf6" />
+              <stop offset="100%" stop-color="#e04ff0" />
+            </linearGradient>
+          </defs>
+          <circle class="ring-track" cx="60" cy="60" r="52" />
+          <circle class="ring-fill" id="timerRing" cx="60" cy="60" r="52" />
+        </svg>
+        <div class="ring-center">
+          <span class="timer-display" id="timerDisplay">0:00</span>
+          <span class="ring-goal" id="timerHint">goal 30:00</span>
+        </div>
+      </div>
+      <button class="stop-btn" id="stopBtn"><span>⏹</span> Stop & Log</button>
+    </div>
+  </div>
+
+  <!-- Reflection modal -->
+  <div class="modal-overlay" id="reflectionModal" hidden>
+    <div class="modal reflection-modal">
+      <div class="confetti">🎉</div>
+      <h2 class="modal-title">Nice work, <span id="reflPerson"></span>!</h2>
+      <p class="modal-sub">30 minutes done. Lock in what stuck today.</p>
+      <label class="field-label">What's new today?</label>
+      <textarea id="reflLearned" rows="3" placeholder="A grammar rule, a phrase, an aha moment…"></textarea>
+      <label class="field-label">Three words worth keeping</label>
+      <div class="word-rows">
+        <div class="word-row"><span class="word-num">1</span><input class="w-word" placeholder="Word" /><input class="w-sentence" placeholder="Example sentence" /></div>
+        <div class="word-row"><span class="word-num">2</span><input class="w-word" placeholder="Word" /><input class="w-sentence" placeholder="Example sentence" /></div>
+        <div class="word-row"><span class="word-num">3</span><input class="w-word" placeholder="Word" /><input class="w-sentence" placeholder="Example sentence" /></div>
+      </div>
+      <button class="submit-btn" id="reflSubmit">Save & Complete Day ✨</button>
+    </div>
+  </div>
+
+  <!-- Setup / config modal -->
+  <div class="modal-overlay" id="setupModal" hidden>
+    <div class="modal">
+      <div class="confetti">🚀</div>
+      <h2 class="modal-title">Start the Challenge</h2>
+      <p class="modal-sub">Pick Day 1 of your 100-day Spanish challenge.</p>
+      <label class="field-label">Challenge start date</label>
+      <div class="date-row">
+        <input type="date" id="setupDate" />
+        <button class="today-btn" id="setupToday">Today</button>
+      </div>
+      <button class="submit-btn" id="setupSave">Let's go 🎯</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

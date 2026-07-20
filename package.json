@@ -1,0 +1,16 @@
+{
+  "name": "spanish-100",
+  "version": "1.0.0",
+  "description": "100 Days of Spanish — two-person accountability app",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.7",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2"
+  }
+}
