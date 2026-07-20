@@ -1,6 +1,17 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
-const api = (url, opts) => fetch(url, opts).then((r) => r.json());
+const api = async (url, opts) => {
+  const res = await fetch(url, opts);
+  let data = {};
+  try { data = await res.json(); } catch { /* non-JSON (e.g. cold-start 502) */ }
+  if (!res.ok) {
+    const err = new Error(data.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+};
 
 const RING_C = 2 * Math.PI * 52; // circumference of r=52 ring ≈ 326.7
 
@@ -84,11 +95,26 @@ $('#setupToday').addEventListener('click', () => api('/api/config').then((c) => 
 $('#setupSave').addEventListener('click', async () => {
   const date = $('#setupDate').value;
   if (!date) return toast('Pick a start date first');
-  await api('/api/config', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ challenge_start_date: date }),
-  });
+  const btn = $('#setupSave');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Setting up…';
+  try {
+    await api('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_start_date: date }),
+    });
+  } catch (e) {
+    if (e.status !== 409) {
+      // 409 = start date already set; anything else is a real failure
+      btn.disabled = false;
+      btn.textContent = original;
+      return toast('Could not save — check your connection and try again.');
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = original;
   hide('setupModal');
   loadDashboard();
 });
@@ -130,18 +156,24 @@ $('#stopBtn').addEventListener('click', async () => {
   clearInterval(timer.interval);
   hide('timerModal');
   const secs = timer.seconds;
+  const person = timer.person;
   if (secs < 1) return;
-  const res = await api('/api/sessions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ person: timer.person, duration_seconds: secs }),
-  });
+  let res;
+  try {
+    res = await api('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ person, duration_seconds: secs }),
+    });
+  } catch (e) {
+    return toast(`⚠️ Couldn't log that ${fmtClock(secs)} session — connection issue. Try again.`);
+  }
   if (res.should_reflect) {
-    openReflection(timer.person);
+    openReflection(person);
   } else {
     const mins = Math.floor(res.daily_total / 60);
-    if (res.completed) toast(`✅ Logged! ${timer.person} is at ${mins} min today`);
-    else toast(`Logged ${fmtClock(secs)} — ${timer.person}: ${mins}/30 min today`);
+    if (res.completed) toast(`✅ Logged! ${person} is at ${mins} min today`);
+    else toast(`Logged ${fmtClock(secs)} — ${person}: ${mins}/30 min today`);
   }
   loadDashboard();
 });
@@ -159,11 +191,23 @@ $('#reflSubmit').addEventListener('click', async () => {
     word: r.querySelector('.w-word').value.trim(),
     sentence: r.querySelector('.w-sentence').value.trim(),
   }));
-  await api('/api/reflections', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ person: $('#reflPerson').textContent, learned_text: $('#reflLearned').value.trim(), words }),
-  });
+  const btn = $('#reflSubmit');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    await api('/api/reflections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ person: $('#reflPerson').textContent, learned_text: $('#reflLearned').value.trim(), words }),
+    });
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    return toast('Could not save your reflection — try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = original;
   hide('reflectionModal');
   toast('🎉 Day complete! Words added to your dictionary.');
   loadDashboard();
@@ -242,4 +286,17 @@ async function loadProgress() {
 }
 
 // ---------- init ----------
-loadDashboard();
+// Retry the first load: Render's free tier can be slow/erroring for a few
+// seconds while the service wakes from idle (cold start).
+async function initialLoad(attempt = 0) {
+  try {
+    await loadDashboard();
+  } catch (e) {
+    if (attempt < 6) {
+      if (attempt === 0) toast('Waking up the server…');
+      return setTimeout(() => initialLoad(attempt + 1), 2000);
+    }
+    toast('Having trouble reaching the server. Refresh in a moment.');
+  }
+}
+initialLoad();
