@@ -9,6 +9,7 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.4",
     "@supabase/supabase-js": "^2.110.7",
     "dotenv": "^16.6.1",
     "express": "^4.21.2"

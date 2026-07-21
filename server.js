@@ -1,11 +1,18 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from './supabase.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Optional: AI-assisted dictionary entries. Works without it — the manual
+// "add word" form and everything else run fine when the key is absent.
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 const DAILY_GOAL = 1800; // 30 minutes in seconds
 const PEOPLE = ['Martin', 'Oliver'];
@@ -175,7 +182,7 @@ app.get('/api/dictionary', h(async (req, res) => {
   const { search, person } = req.query;
   let q = supabase
     .from('dictionary_entries')
-    .select('id, word, sentence, person, date')
+    .select('id, word, translation, part_of_speech, sentence, person, date')
     .order('date', { ascending: false })
     .order('id', { ascending: false });
   if (person && PEOPLE.includes(person)) q = q.eq('person', person);
@@ -183,6 +190,80 @@ app.get('/api/dictionary', h(async (req, res) => {
   const { data, error } = await q;
   if (error) throw error;
   res.json(data);
+}));
+
+// Manually add a word to the shared dictionary
+const POS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'expression', 'other'];
+app.post('/api/dictionary', h(async (req, res) => {
+  const { person, word, translation, part_of_speech, sentence } = req.body || {};
+  if (!PEOPLE.includes(person)) return res.status(400).json({ error: 'Invalid person' });
+  if (!word || !word.trim()) return res.status(400).json({ error: 'Word is required' });
+  const pos = POS.includes(part_of_speech) ? part_of_speech : 'other';
+  const { data, error } = await supabase
+    .from('dictionary_entries')
+    .insert({
+      reflection_id: null,
+      person,
+      date: todayStr(),
+      word: word.trim(),
+      translation: (translation || '').trim(),
+      part_of_speech: pos,
+      sentence: (sentence || '').trim(),
+    })
+    .select('id, word, translation, part_of_speech, sentence, person, date')
+    .single();
+  if (error) throw error;
+  res.json(data);
+}));
+
+// AI: given a Spanish word, return translation + part-of-speech + example sentence
+app.post('/api/generate', h(async (req, res) => {
+  const word = (req.body && req.body.word ? String(req.body.word) : '').trim();
+  if (!word) return res.status(400).json({ error: 'Word is required' });
+  if (!anthropic) return res.status(503).json({ error: 'AI is not configured (missing ANTHROPIC_API_KEY)' });
+
+  let msg;
+  try {
+    msg = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 400,
+      system:
+        'You help two friends learning Spanish. Given a Spanish word or short phrase, respond with its most common English translation, its part of speech, and one very simple example sentence in Spanish (A1/A2 level, max ~10 words) that naturally uses the word. If the input is a phrase or idiom, use part_of_speech "phrase". Keep it beginner-friendly.',
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              translation: { type: 'string' },
+              part_of_speech: { type: 'string', enum: POS },
+              sentence: { type: 'string' },
+            },
+            required: ['translation', 'part_of_speech', 'sentence'],
+            additionalProperties: false,
+          },
+        },
+      },
+      messages: [{ role: 'user', content: `Spanish word or phrase: "${word}"` }],
+    });
+  } catch (err) {
+    console.error('AI generate failed:', err.message);
+    const status = err.status === 429 ? 429 : 502;
+    return res.status(status).json({ error: 'AI is temporarily unavailable — fill the fields in manually.' });
+  }
+
+  const textBlock = msg.content.find((b) => b.type === 'text');
+  let out = {};
+  try {
+    out = JSON.parse(textBlock ? textBlock.text : '{}');
+  } catch {
+    return res.status(502).json({ error: 'AI returned an unexpected response' });
+  }
+  res.json({
+    translation: out.translation || '',
+    part_of_speech: POS.includes(out.part_of_speech) ? out.part_of_speech : 'other',
+    sentence: out.sentence || '',
+  });
 }));
 
 app.get('/api/progress', h(async (req, res) => {

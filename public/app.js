@@ -240,8 +240,12 @@ async function loadDictionary() {
     .map(
       (r, i) => `
       <div class="word-card" style="animation-delay:${Math.min(i * 30, 300)}ms">
-        <div class="word">${esc(r.word)}</div>
-        <div class="sentence">"${esc(r.sentence)}"</div>
+        <div class="word-top">
+          <span class="word">${esc(r.word)}</span>
+          ${r.part_of_speech ? `<span class="pos">${esc(r.part_of_speech)}</span>` : ''}
+        </div>
+        ${r.translation ? `<div class="translation">${esc(r.translation)}</div>` : ''}
+        ${r.sentence ? `<div class="sentence">"${esc(r.sentence)}"</div>` : ''}
         <div class="meta"><span class="avatar" data-person="${esc(r.person)}">${esc(r.person[0])}</span> ${esc(r.person)} · ${fmtDate(r.date)}</div>
       </div>`
     )
@@ -251,6 +255,82 @@ let dictDebounce;
 $('#dictSearch').addEventListener('input', () => {
   clearTimeout(dictDebounce);
   dictDebounce = setTimeout(loadDictionary, 200);
+});
+
+// ---------- add word ----------
+let addWordPerson = 'Martin';
+$('#addWordBtn').addEventListener('click', () => {
+  $('#awWord').value = '';
+  $('#awTranslation').value = '';
+  $('#awSentence').value = '';
+  $('#awPos').value = 'noun';
+  show('addWordModal');
+});
+
+$('#addWordPerson').addEventListener('click', (e) => {
+  const btn = e.target.closest('.seg-btn');
+  if (!btn) return;
+  $$('#addWordPerson .seg-btn').forEach((b) => b.classList.remove('active'));
+  btn.classList.add('active');
+  addWordPerson = btn.dataset.person;
+});
+
+$('#awGenerate').addEventListener('click', async () => {
+  const word = $('#awWord').value.trim();
+  if (!word) return toast('Type a Spanish word first');
+  const btn = $('#awGenerate');
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  $('#awGenIcon').textContent = '⏳';
+  $('#awGenText').textContent = 'Thinking…';
+  try {
+    const r = await api('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word }),
+    });
+    $('#awTranslation').value = r.translation || '';
+    if (r.part_of_speech) $('#awPos').value = r.part_of_speech;
+    $('#awSentence').value = r.sentence || '';
+  } catch (e) {
+    if (e.status === 503) toast('AI isn\'t set up yet — fill the fields in manually.');
+    else toast('Could not generate — try again or fill it in manually.');
+  }
+  btn.disabled = false;
+  btn.classList.remove('spinning');
+  $('#awGenIcon').textContent = '✨';
+  $('#awGenText').textContent = 'Generate';
+});
+
+$('#awSave').addEventListener('click', async () => {
+  const word = $('#awWord').value.trim();
+  if (!word) return toast('A Spanish word is required');
+  const btn = $('#awSave');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  try {
+    await api('/api/dictionary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        person: addWordPerson,
+        word,
+        translation: $('#awTranslation').value.trim(),
+        part_of_speech: $('#awPos').value,
+        sentence: $('#awSentence').value.trim(),
+      }),
+    });
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    return toast('Could not add the word — try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = original;
+  hide('addWordModal');
+  toast(`📗 "${word}" added to the dictionary`);
+  loadDictionary();
 });
 
 // ---------- progress ----------

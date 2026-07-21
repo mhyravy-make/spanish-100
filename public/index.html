@@ -108,6 +108,7 @@
           <button class="seg-btn" data-person="Martin">Martin</button>
           <button class="seg-btn" data-person="Oliver">Oliver</button>
         </div>
+        <button class="add-word-btn" id="addWordBtn">＋ Add word</button>
       </div>
       <div class="dict-grid" id="dictGrid"></div>
       <div class="empty" id="dictEmpty" hidden>
@@ -193,6 +194,46 @@
         <button class="today-btn" id="setupToday">Today</button>
       </div>
       <button class="submit-btn" id="setupSave">Let's go 🎯</button>
+    </div>
+  </div>
+
+  <!-- Add word modal -->
+  <div class="modal-overlay" id="addWordModal" hidden>
+    <div class="modal">
+      <button class="x-close" data-close>×</button>
+      <h2 class="modal-title">Add a word 📗</h2>
+      <p class="modal-sub">Type a Spanish word — let AI fill the rest, or do it yourself.</p>
+
+      <label class="field-label">Added by</label>
+      <div class="seg" id="addWordPerson">
+        <button type="button" class="seg-btn active" data-person="Martin">Martin</button>
+        <button type="button" class="seg-btn" data-person="Oliver">Oliver</button>
+      </div>
+
+      <label class="field-label">Spanish word or phrase</label>
+      <div class="gen-row">
+        <input id="awWord" placeholder="e.g. madrugar" />
+        <button class="gen-btn" id="awGenerate"><span id="awGenIcon">✨</span> <span id="awGenText">Generate</span></button>
+      </div>
+
+      <label class="field-label">English translation</label>
+      <input id="awTranslation" placeholder="e.g. to wake up early" />
+
+      <label class="field-label">Type</label>
+      <select id="awPos">
+        <option value="noun">Noun</option>
+        <option value="verb">Verb</option>
+        <option value="adjective">Adjective</option>
+        <option value="adverb">Adverb</option>
+        <option value="phrase">Phrase</option>
+        <option value="expression">Expression</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label class="field-label">Example sentence</label>
+      <textarea id="awSentence" rows="2" placeholder="e.g. Odio madrugar los lunes."></textarea>
+
+      <button class="submit-btn" id="awSave">Add to dictionary</button>
     </div>
   </div>
 
