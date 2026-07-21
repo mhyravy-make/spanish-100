@@ -225,6 +225,8 @@ input:focus, textarea:focus { border-color: var(--violet); background: rgba(139,
   display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
   animation: fadeIn .2s;
 }
+/* The `hidden` attribute must win over display:flex above, or modals never hide. */
+.modal-overlay[hidden] { display: none; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .modal {
   background: linear-gradient(160deg, #1b1730, #100e1c); border: 1px solid var(--border-strong);

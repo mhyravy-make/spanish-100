@@ -11,6 +11,13 @@ const DAILY_GOAL = 1800; // 30 minutes in seconds
 const PEOPLE = ['Martin', 'Oliver'];
 
 app.use(express.json());
+
+// API responses must never be cached (browsers were serving stale reads)
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 app.use(express.static(join(__dirname, 'public')));
 
 // ---------- date helpers (server-local calendar days) ----------

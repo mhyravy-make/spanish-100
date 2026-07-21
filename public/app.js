@@ -1,7 +1,9 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const api = async (url, opts) => {
-  const res = await fetch(url, opts);
+  // never serve API reads from cache — a stale GET after a POST caused the
+  // setup screen to reappear instead of advancing to the dashboard
+  const res = await fetch(url, { cache: 'no-store', ...opts });
   let data = {};
   try { data = await res.json(); } catch { /* non-JSON (e.g. cold-start 502) */ }
   if (!res.ok) {
