@@ -191,6 +191,13 @@ input:focus, textarea:focus { border-color: var(--violet); background: rgba(139,
 }
 .add-word-btn:hover { transform: translateY(-2px); }
 
+.download-btn {
+  font: inherit; font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border-strong); border-radius: 12px;
+  padding: 10px 16px; cursor: pointer; transition: .2s;
+}
+.download-btn:hover { background: var(--grad-soft); transform: translateY(-2px); }
+
 .gen-row { display: flex; gap: 8px; }
 .gen-row input { flex: 1; }
 .gen-btn {

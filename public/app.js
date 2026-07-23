@@ -217,6 +217,7 @@ $('#reflSubmit').addEventListener('click', async () => {
 
 // ---------- dictionary ----------
 let dictPerson = '';
+let dictRows = [];
 $('#dictSeg').addEventListener('click', (e) => {
   const btn = e.target.closest('.seg-btn');
   if (!btn) return;
@@ -234,6 +235,7 @@ async function loadDictionary() {
   if (search) params.set('search', search);
   if (dictPerson) params.set('person', dictPerson);
   const rows = await api('/api/dictionary?' + params);
+  dictRows = rows;
   const grid = $('#dictGrid');
   $('#dictEmpty').hidden = rows.length > 0;
   grid.innerHTML = rows
@@ -255,6 +257,34 @@ let dictDebounce;
 $('#dictSearch').addEventListener('input', () => {
   clearTimeout(dictDebounce);
   dictDebounce = setTimeout(loadDictionary, 200);
+});
+
+// ---------- download CSV ----------
+const csvCell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+
+function buildDictionaryCsv(rows) {
+  const header = ['Word', 'Translation', 'Type', 'Example sentence', 'Added by', 'Date'];
+  const lines = [header.map(csvCell).join(',')];
+  for (const r of rows) {
+    lines.push([r.word, r.translation, r.part_of_speech, r.sentence, r.person, r.date].map(csvCell).join(','));
+  }
+  // Leading BOM so Excel reads it as UTF-8 (correct Spanish accents)
+  return '﻿' + lines.join('\r\n');
+}
+
+$('#downloadCsvBtn').addEventListener('click', () => {
+  if (!dictRows.length) return toast('No words to download yet');
+  const csv = buildDictionaryCsv(dictRows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `spanish-100-dictionary-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast(`⬇ Downloaded ${dictRows.length} word${dictRows.length === 1 ? '' : 's'}`);
 });
 
 // ---------- add word ----------
